@@ -48,4 +48,5 @@ if there is a crash int he server
 	-there is a jobID associated with the training data that get entered when the user 
 uploads the real test data, 
 	-depending on job status, we are running test or training data
-	-additional websites from nick were posted on the google drive/ sent via email to group members
+	-nick is planning to help us set up the apache flask server during class
+	-need to do back end file handling then build front end
