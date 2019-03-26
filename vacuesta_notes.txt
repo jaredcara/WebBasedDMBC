@@ -1,0 +1,81 @@
+https://sites.google.com/site/aslugsguidetopython/data-analysis/pandas/calling-r-from-python
+
+this site has information to put R in python in order to call the R functions into python when using flask for webdevelopment
+
+https://www.r-bloggers.com/integrating-python-and-r-part-ii-executing-r-from-python-and-vice-versa/
+
+to call R functions into python by using subprocesses
+there is a subprocess module that is available
+You need to build a command line to be executed
+
+```
+# run_max.py
+import subprocess
+
+# Define command and arguments
+command = 'Rscript'
+path2script = 'path/to your script/max.R'
+
+# Variable number of args in a list
+args = ['11', '3', '9', '42']
+
+# Build subprocess command
+cmd = [command, path2script] + args
+
+# check_output will run the command and store to result
+x = subprocess.check_output(cmd, universal_newlines=True)
+
+print('The maximum of the numbers is:', x)
+
+```
+
+This is an example of calling an R script into python. The original R script was based on finding the maximum of a number from the command line. This can be used as an example to call certain functions from the DMBC R scripts made in order to put these algorithms into python and for web-development. 
+
+Subprocesses seem to be the best way to be able to do this. 
+
+```
+myscript.R:
+x<-4
+print(x)
+
+runner.py:
+import subprocess
+subprocess.check_call(['Rscript', 'myscript.R'], shell=False)
+
+execution:
+$ python3 runner.py
+[1] 42
+```
+this is run on a linux command terminal for the execution
+
+
+-----------------
+
+python flask details
+
+https://pythonspot.com/web-dev/
+
+site for python web development
+
+after installing flask which is installed on the virtual machine
+
+```
+from flask import Flask
+app = Flask(__name__)
+ 
+@app.route("/")
+def hello():
+return "Hello World!"
+ 
+if __name__ == "__main__":
+app.run()
+
+```
+this is an example of code in order to make a file for flask webdevelopment
+simply run this: 
+$ python hello.py
+* Running on http://localhost:5000/
+
+->if you open the http://localhost:5000/ in your webbrowser, "Hello World!" should appear
+
+
