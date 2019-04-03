@@ -1,0 +1,5 @@
+library(DMBC)
+data(training)
+data(test)
+auc_out <- Cal_AUC(loocv(training))
+dmbc_predict(data=training,testSet=test,auc_out=auc_out)
