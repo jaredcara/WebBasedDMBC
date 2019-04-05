@@ -1,0 +1,25 @@
+<html>
+   <body>
+      <p> Enter your training dataset in CSV format. This data must be process using
+      muther or Qiime</p>
+      <p> Training dataset </p>
+      <form action = "http://localhost:5000/uploader" method = "POST" 
+         enctype = "multipart/form-data">
+         <input type = "file" name = "file" />
+         <input type = "submit"/>
+      <p> Or </p>
+      <p> Enter your Testing Dataset in CSV format</p>
+      <p> Testing dataset </p>
+      <form action = "http://localhost:5000/uploader" method = "POST"
+	     enctype = "multipart/form-data">
+        <p> Enter the job ID associated with your training dataset.
+      You must have a job ID to run your test data</p>
+      job ID:<br>
+         <input type = "text" ID = "job ID">
+		 <p> Upload test datafile <p>
+         <input type = "file" name = "file" />
+         <input type = "submit"/>
+      
+      </form>
+   </body>
+</html>
