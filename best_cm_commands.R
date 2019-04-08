@@ -1,0 +1,5 @@
+library(DMBC)
+data(training)
+cv = loocv(training)
+auc_out = Cal_AUC(cv)
+best_cm(CV=cv,auc_out=auc_out)
