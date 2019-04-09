@@ -5,31 +5,30 @@ from flask import Flask, render_template
 from flask import flash, request, redirect, url_for
 #imports for secure files
 from werkzeug.utils import secure_filename
-#where the upload will be stored
-##UPLOAD_FOLDER = "C:\\Users\\tensm\\Desktop"
-###certain extenstions allowed for file, our case is csv
-##ALLOWED_EXTENSIONS = set(['csv'])
+#how to name a flask app
 app = Flask(__name__)
-##app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-##@app.route("/")
-def hello():
-    return "Hello World!"
- 
-##if __name__ == "__main__":
-##    app.run()
-#should just show html where we can just upload a file with the browser
-#trying to figure out how to not use html
-@app.route('/upload')
-def upload_file():
-   return render_template('upload.html')
-	
+
+#loads a page based off the html file I created
+#really had to look this up cuz no idea how to do this in flask
+@app.route("/")
+def page():
+    #opens the html file about the forms
+    with open("DMBCforms.html","r") as html_file:
+        #returns the read of that to the local server
+        return html_file.read()
+
+#handles all the uploading, think this only works for one file though	
 @app.route('/uploader', methods = ['GET', 'POST'])
 #file upload_file2 because needs to have diff name
 def upload_file2():
+    #if the request is to post somethign to the page
    if request.method == 'POST':
+       #get that file
       f = request.files['file']
+      #saves the file as the filename, need to figure out how to add to database
       f.save(secure_filename(f.filename))
-      return 'file uploaded successfully'
+      return 'Thank you for submitting your file for the DMBC analysis'
+      print f.filename
 		
 if __name__ == '__main__':
    app.run(debug = True)
