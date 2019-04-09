@@ -1,23 +1,23 @@
 <html>
    <body>
       <p> Enter your training dataset in CSV format. This data must be process using
-      muther or Qiime</p>
+      mothur or Qiime</p>
       <p> Training dataset </p>
       <form action = "http://localhost:5000/uploader" method = "POST" 
-         enctype = "multipart/form-data">
-         <input type = "file" name = "file" />
+         enctype = "multipart/form-data" accept = ".csv">
+         <input type = "file" name = "file1" />
          <input type = "submit"/>
       <p> Or </p>
       <p> Enter your Testing Dataset in CSV format</p>
       <p> Testing dataset </p>
       <form action = "http://localhost:5000/uploader" method = "POST"
-	     enctype = "multipart/form-data">
+	     enctype = "multipart/form-data" accept = ".csv">
         <p> Enter the job ID associated with your training dataset.
       You must have a job ID to run your test data</p>
       job ID:<br>
-         <input type = "text" ID = "job ID">
+         <input type = "text" name = "job ID">
 		 <p> Upload test datafile <p>
-         <input type = "file" name = "file" />
+         <input type = "file" name = "file2" />
          <input type = "submit"/>
       
       </form>

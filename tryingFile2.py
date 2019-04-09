@@ -21,27 +21,27 @@ def page():
 @app.route('/uploader', methods = ['GET', 'POST'])
 #file upload_file2 because needs to have diff name
 def upload_file2():
-    #need to have method to select either test or training data
-    #if user puts in both job ID and file
-##   jobID = request.form['job ID']
+##    #need to have method to select either test or training data
+##    #if user puts in both job ID and file
+    jobID = request.form['job ID']
 ##   # if there isn't a job ID, we will be doing trainfing data
-##   if jobID is None:
-        #if the request is to post somethign to the page
+##    if jobID is None:
+##        #if the request is to post somethign to the page
     if request.method == 'POST':
-        jobID = request.form['job ID']
-        if jobID is None:
-            #get that file
-            fTrain = request.files['file']
-            #saves the file as the filename, saves to certain directory
-            fTrain.save(secure_filename(fTrain.filename))
-            return 'Thank you for submitting your file for the DMBC trainging analysis'
-   #if we do have that job ID, we want to do the training
-        else:
-            #get that file
-            fTest = request.files['file']
-            #saves the file as the filename, saves to certain directory
-            fTest.save(secure_filename(fTest.filename))
-            return 'Thank you for submitting your file for the DMBC testing analysis'
+        #get that file
+        fTrain = request.files['file1']
+        #saves the file as the filename, saves to certain directory
+        #fTrain.save(secure_filename(fTrain.filename))
+        return str(request.form)
+        #return 'Thank you for submitting your file for the DMBC trainging analysis'
+##   #if we do have that job ID, we want to do the training
+##    else:
+##        jobID = request.form['job ID']
+##            #get that file
+##        fTest = request.files['file']
+##            #saves the file as the filename, saves to certain directory
+##        fTest.save(secure_filename(fTest.filename))
+    #return 'Thank you for submitting your file for the DMBC testing analysis'
     
 if __name__ == '__main__':
    app.run(debug = True)
