@@ -1,0 +1,12 @@
+<html>
+   <body>
+      <p> Enter your training dataset in CSV format. This data must be process using
+      mothur or Qiime</p>
+      <p> Training dataset </p>
+      <form action = "http://localhost:5000/uploadTraining" method = "POST" 
+         enctype = "multipart/form-data" accept = ".csv">
+         <input type = "file" name = "file1" />
+		 <input type = "submit"/>
+      </form>
+   </body>
+</html>
