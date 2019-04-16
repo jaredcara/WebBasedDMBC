@@ -36,7 +36,7 @@ def upload_file():
         #get that file
     fTestName = secure_filename(fTest.filename)
     #saves the file as the filename, saves to certain directory
-    fTest.save(os.path.join(app.config['UPLOAD_FOLDER'], fTest))
+    fTest.save(os.path.join(app.config['UPLOAD_FOLDER'], fTestName))
     return 'Thank you for submitting your file for the DMBC testing analysis'
            
 if __name__ == '__main__':
