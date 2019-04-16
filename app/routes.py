@@ -1,9 +1,11 @@
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
+from werkzeug.utils import secure_filename
+import os
 
 from app import app, db
-from app.forms import LoginForm, RegistrationForm
+from app.forms import LoginForm, RegistrationForm, Upload
 from app.models import User, Job
 
 
@@ -68,3 +70,20 @@ def user(username):
             {'id': all_jobs[0].id, 'body': all_jobs[0].project}
         ]
     return render_template('user.html', user=user, jobs=jobs)
+
+
+#handles all the uploading, think this only works for one file though   
+@app.route('/upload', methods = ['GET', 'POST'])
+def upload():
+    form = Upload()
+
+    if form.validate_on_submit():
+        f1 = form.upload1
+
+        filename1 = secure_filename(f1.filename)
+        f.save(os.path.join('/home/jared/files/', filename1))
+        
+
+        return redirect(url_for('index'))
+
+    return render_template('upload.html', form=form)
