@@ -4,15 +4,9 @@ from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 import os
 
-from flask_mail import Message
-from app import mail, bcrypt
 from app import app, db
-
-from app.forms import LoginForm, RegistrationForm, RequestResetForm, ResetPasswordForm
 from app.forms import LoginForm, RegistrationForm, Upload
 from app.models import User, Job
-
-
 
 
 @app.route('/')
@@ -57,7 +51,6 @@ def register():
         return redirect(url_for('index'))
     
     form = RegistrationForm()
-    
     if form.validate_on_submit():
         user = User(username=form.username.data, email=form.email.data)
         user.set_password(form.password.data)
@@ -79,54 +72,6 @@ def user(username):
     return render_template('user.html', user=user, jobs=jobs)
 
 
-def send_reset_email(user):
-    token = user.get_reset_token()
-    msg = Message('Password Reset Request',
-                  sender='noreply@demo.com',
-                  recipients=[user.email])
-    msg.body = f'''To reset your password, visit the following link:
-{url_for('reset_token', token=token, _external=True)}
-
-If you did not make this request then simply ignore this email and no changes will be made.
-'''
-    mail.send(msg)
-
-
-@app.route("/reset_request", methods=['GET', 'POST'])
-def reset_request():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    
-    form = RequestResetForm()
-    
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        send_reset_email(user)
-        flash('An email has been sent with instructions to reset your password.', 'info')
-        return redirect(url_for('login'))
-    return render_template('reset_request.html', title='Reset Password', form=form)
-
-
-@app.route("/reset_password/<token>", methods=['GET', 'POST'])
-def reset_token(token):
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    user = User.verify_reset_token(token)
-    if user is None:
-        flash('That is an invalid or expired token', 'warning')
-        return redirect(url_for('reset_request'))
-    
-    form = ResetPasswordForm()
-    
-    if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user.password = hashed_password
-        db.session.commit()
-        flash('Your password has been updated! You are now able to log in', 'success')
-        return redirect(url_for('login'))
-    return render_template('reset_token.html', title='Reset Password', form=form)
-
-
 #handles all the uploading, think this only works for one file though   
 @app.route('/upload', methods = ['GET', 'POST'])
 def upload():
@@ -142,4 +87,3 @@ def upload():
         return redirect(url_for('index'))
 
     return render_template('upload.html', form=form)
-
