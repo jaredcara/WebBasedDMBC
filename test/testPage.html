@@ -2,13 +2,12 @@
    <body>
       <p> Enter your test dataset in CSV format. This data must be process using
       mothur or Qiime</p>
-      <p> Training dataset </p>
+      <p> Test dataset </p>
       <form action = "http://localhost:5000/uploadTest" method = "POST" 
          enctype = "multipart/form-data" accept = ".csv">
         <p> Enter the job ID associated with your training dataset.
       You must have a job ID to run your test data</p>
       job ID:<br>
-		 <input type = "hidden" name = "trainingJob" value = "Test">
          <input type = "text" name = "job ID" >
 		 <p> Upload test datafile <p>
          <input type = "file" name = "file2" />

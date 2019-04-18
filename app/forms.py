@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from flask_wtf.file import FileField, FileRequired, FileAllowed
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, FieldList
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo
 from app.models import User
 
@@ -29,6 +30,7 @@ class RegistrationForm(FlaskForm):
         if user is not None:
             raise ValidationError('Please use a different email address.')
 
+            
 class RequestResetForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Request Password Reset')
@@ -46,3 +48,11 @@ class ResetPasswordForm(FlaskForm):
     
     
     
+
+class Upload(FlaskForm):
+    upload1 = FileField(validators=[
+        FileRequired(), 
+        FileAllowed(['csv'], 'csv files only')
+        ])
+    submit = SubmitField('Upload')
+

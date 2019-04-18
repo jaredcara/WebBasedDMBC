@@ -1,11 +1,15 @@
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
+from werkzeug.utils import secure_filename
+import os
 
 from flask_mail import Message
 from app import mail, bcrypt
 from app import app, db
+
 from app.forms import LoginForm, RegistrationForm, RequestResetForm, ResetPasswordForm
+from app.forms import LoginForm, RegistrationForm, Upload
 from app.models import User, Job
 
 
@@ -74,6 +78,7 @@ def user(username):
         ]
     return render_template('user.html', user=user, jobs=jobs)
 
+
 def send_reset_email(user):
     token = user.get_reset_token()
     msg = Message('Password Reset Request',
@@ -120,3 +125,21 @@ def reset_token(token):
         flash('Your password has been updated! You are now able to log in', 'success')
         return redirect(url_for('login'))
     return render_template('reset_token.html', title='Reset Password', form=form)
+
+
+#handles all the uploading, think this only works for one file though   
+@app.route('/upload', methods = ['GET', 'POST'])
+def upload():
+    form = Upload()
+
+    if form.validate_on_submit():
+        f1 = form.upload1
+
+        filename1 = secure_filename(f1.filename)
+        f.save(os.path.join('/home/jared/files/', filename1))
+        
+
+        return redirect(url_for('index'))
+
+    return render_template('upload.html', form=form)
+
