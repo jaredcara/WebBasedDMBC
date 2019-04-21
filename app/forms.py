@@ -31,8 +31,9 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('Please use a different email address.')
 
 class Upload(FlaskForm):
-    upload1 = FileField(validators=[
+    upload = FileField(validators=[
         FileRequired(), 
         FileAllowed(['csv'], 'csv files only')
         ])
+    description = StringField('Project Description')
     submit = SubmitField('Upload')

@@ -28,6 +28,8 @@ class Job(db.Model):
     project = db.Column(db.String(140))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    training = db.Column(db.PickleType)
+    testing = db.Column(db.PickleType)
 
     def __repr__(self):
         return '<Job {}>'.format(self.project)

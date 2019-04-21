@@ -3,6 +3,7 @@ from flask_login import current_user, login_user, logout_user, login_required
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 import os
+import csv
 
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, Upload
@@ -65,25 +66,43 @@ def register():
 @login_required
 def user(username):
     user = User.query.filter_by(username=username).first()
-    all_jobs = Job.query.all()
-    jobs = [
-            {'id': all_jobs[0].id, 'body': all_jobs[0].project}
-        ]
+    all_jobs = user.jobs.all()
+    jobs = []
+    for each in all_jobs:
+        jobs.append({'id': each.id, 'project': each.project})
+    
     return render_template('user.html', user=user, jobs=jobs)
 
 
-#handles all the uploading, think this only works for one file though   
+@app.route('/user/<username>/<project_id>')
+@login_required
+def current_project(username, project_id):
+        
+    return render_template('current_project.html')
+
+
 @app.route('/upload', methods = ['GET', 'POST'])
+@login_required
 def upload():
     form = Upload()
-
     if form.validate_on_submit():
-        f1 = form.upload1
-
-        filename1 = secure_filename(f1.filename)
-        f.save(os.path.join('/home/jared/files/', filename1))
+        f = form.upload.data
+        description = form.description.data
         
+        inp  = f.read().decode('utf-8')
+        inp  = inp.split('\n')
+        
+        outp = []
 
+        for i in range(len(inp)-1):
+            outp.append(inp[i].strip('\r').split(','))
+        
+        job = Job(project=description, user=current_user, training=outp)
+        db.session.add(job)
+        db.session.commit()
+
+        flash('File upload successful')
         return redirect(url_for('index'))
+        
 
     return render_template('upload.html', form=form)

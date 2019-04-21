@@ -3,7 +3,9 @@
 {% block content %}
 	<h1>User: {{ user.username }}</h1>
 	<hr>
+	<h3>All current projects</h3>
 	{% for job in jobs %}
 		{% include '_job.html' %}
 	{% endfor %}
+	<a href="{{ url_for('upload') }}">Start a new project</a>
 {% endblock %}
