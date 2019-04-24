@@ -1,14 +1,15 @@
 from flask import render_template, flash, redirect, url_for, request
 from flask_login import current_user, login_user, logout_user, login_required
+
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
-import os
-import csv
 
-from app import app, db
+import os
+
+from app import app, db, q
 from app.forms import LoginForm, RegistrationForm, Upload
 from app.models import User, Job
-
+from app.worker_commands import training_function
 
 @app.route('/')
 @app.route('/index')
@@ -84,25 +85,39 @@ def current_project(username, project_id):
 @app.route('/upload', methods = ['GET', 'POST'])
 @login_required
 def upload():
+    # call upload form
     form = Upload()
-    if form.validate_on_submit():
-        f = form.upload.data
-        description = form.description.data
-        
-        inp  = f.read().decode('utf-8')
-        inp  = inp.split('\n')
-        
-        outp = []
 
-        for i in range(len(inp)-1):
-            outp.append(inp[i].strip('\r').split(','))
-        
-        job = Job(project=description, user=current_user, training=outp)
+    # ensure the form is valid, no errors present
+    if form.validate_on_submit():
+
+        # load data into f variable and description into d variable
+        f = form.upload.data
+        d = form.description.data
+
+        job = Job(project=d, user=current_user)
         db.session.add(job)
         db.session.commit()
 
+        this_id = Job.query.filter_by(user=current_user, project=d).first().id
+
+        filename = secure_filename(f.filename)
+        filename = str(current_user.id) + '_' + str(this_id) + '_' + filename[:-4]
+
+        f.save(os.path.join(app.instance_path, 'files', filename + '.csv'))
+        
+        job.filename = filename
+
+        db.session.merge(job)
+        db.session.commit()
+
+        job = q.enqueue_call(
+                func=training_function, args=(this_id,), result_ttl=5000
+                )
+        
         flash('File upload successful')
         return redirect(url_for('index'))
         
 
     return render_template('upload.html', form=form)
+
