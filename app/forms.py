@@ -10,9 +10,10 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SubmitField #,FieldList
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo
+from flask_login import current_user
 
 #   imports User model to validate users.
-from app.models import User
+from app.models import User, Training, Testing
 
 
 ##  LoginForm class manages login.
@@ -58,7 +59,7 @@ class RegistrationForm(FlaskForm):
 
 ##  Upload class manages file uploads.
 #   Upload and submit fields.
-class Upload(FlaskForm):
+class UploadTraining(FlaskForm):
     # Validators present to require a file and .csv extension.
     upload = FileField(validators=[
         FileRequired(), 
@@ -66,4 +67,24 @@ class Upload(FlaskForm):
         ])
     description = StringField('Project Description')
     submit = SubmitField('Upload')
+    def validate_description(self, description):
+        description = Training.query.filter_by(user_id=current_user.id, project=description.data).first()
+        if description is not None:
+            raise ValidationError('Please use a different project description, you may have a current project with the same data.')
+
+
+##  Upload class manages file uploads.
+#   Upload and submit fields.
+class UploadTesting(FlaskForm):
+    # Validators present to require a file and .csv extension.
+    upload = FileField(validators=[
+        FileRequired(),
+        FileAllowed(['csv'], 'csv files only')
+        ])
+    description = StringField('Testing Description')
+    submit = SubmitField('Upload')
+    def validate_description(self, description):
+        description = Testing.query.filter_by(user_id=current_user.id, project=description.data).first()
+        if description is not None:
+            raise ValidationError('Please use a different project description, you may have a current project with the same data.')
 

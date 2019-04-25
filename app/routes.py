@@ -18,12 +18,12 @@ import os
 
 #   Imports main app, database, and queue.
 from app import app, db, q
-#   Imports entry forms.
-from app.forms import LoginForm, RegistrationForm, Upload
 #   Imports database models
-from app.models import User, Job
+from app.models import User, Training, Testing
+#   Imports entry forms.
+from app.forms import LoginForm, RegistrationForm, UploadTraining, UploadTesting
 #   Imports background worker functions
-from app.worker_commands import training_function
+from app.worker_commands import training_function, testing_function
 
 
 ##  Index route.
@@ -111,24 +111,72 @@ def register():
 def user(username):
     # Query the database for user.
     user = User.query.filter_by(username=username).first()
-    # Query the database for the users jobs.
-    all_jobs = user.jobs.all()
+    # Query the database for the users training projects.
+    all_trainings = user.training.all()
     
-    # Adds all jobs to list for user to see their projects.
-    jobs = []
-    for each in all_jobs:
-        jobs.append({'id': each.id, 'project': each.project})
+    # Adds all trainings to list for user to see their projects.
+    trainings = []
+    for each in all_trainings:
+        trainings.append({'id': each.id, 'project': each.project})
     
     # Render user/<username>.
-    return render_template('user.html', user=user, jobs=jobs)
+    return render_template('user.html', user=user, trainings=trainings)
 
 
 ##  User/<username>/<project_id> route.
 #   Currently a WIP.
-@app.route('/user/<username>/<project_id>')
+@app.route('/user/<username>/<project_id>', methods = ['GET', 'POST'])
 @login_required
 def current_project(username, project_id):
-    return render_template('current_project.html')
+    # Query the database for tested sets.
+    training = Training.query.filter_by(id=project_id).first()
+    
+    all_testings = training.testing.all()
+
+    print(project_id)
+
+    testings = []
+    for each in all_testings:
+        testings.append({'id': each.id, 'project': each.project})
+    
+    # Load the upload form.
+    form = UploadTesting()
+    
+
+    # If the form is valid, submit the form.
+    if form.validate_on_submit():
+        # Load data into f variable and description into d variable.
+        f = form.upload.data
+        d = form.description.data
+        
+        # Creates new testing entry for database.
+
+        testing = Testing(project=d, user=current_user, training=training)
+        db.session.add(testing)
+        db.session.commit()
+
+        testing_id = Testing.query.filter_by(user=current_user, project=d).first().id
+
+        filename = secure_filename(f.filename)
+
+        filename = str(current_user.id) + '_' + str(project_id) + '_' + str(testing_id) + '_' + filename[:-4]
+
+        f.save(os.path.join(app.instance_path, 'files', filename + '.csv'))
+
+        testing.filename = filename
+
+        db.session.merge(testing)
+        db.session.commit()
+
+        running_job = q.enqueue_call(
+                func=testing_function, args=(testing_id,), result_ttl=5000
+                )
+
+        
+        flash('File upload successful')
+        return redirect(url_for('index'))
+
+    return render_template('current_project.html', form=form, training=training.project, testings=testings)
 
 
 ##  Upload route.
@@ -136,9 +184,9 @@ def current_project(username, project_id):
 #   Requires users to be logged in.
 @app.route('/upload', methods = ['GET', 'POST'])
 @login_required
-def upload():
+def uploadtraining():
     # Load the upload form.
-    form = Upload()
+    form = UploadTraining()
 
     # If the form is valid, submit the form.
     if form.validate_on_submit():
@@ -146,34 +194,34 @@ def upload():
         f = form.upload.data
         d = form.description.data
 
-        # Creates new job entry for database.
-        job = Job(project=d, user=current_user)
+        # Creates new training entry for database.
+        training = Training(project=d, user=current_user)
         # Add and submit entry to database.
-        db.session.add(job)
+        db.session.add(training)
         db.session.commit()
 
-        # Query the database for this job.
-        # This is to enable consistancy across input files, job is added
+        # Query the database for this training jpb.
+        # This is to enable consistancy across input files, training is added
         # to the database first, then the id is obtained.
-        job_id = Job.query.filter_by(user=current_user, project=d).first().id
+        training_id = Training.query.filter_by(user=current_user, project=d).first().id
         
         # Retrieves the filename for the input file.
         filename = secure_filename(f.filename)
-        # Filenames are stored as "userid_jobid_filename".
-        filename = str(current_user.id) + '_' + str(job_id) + '_' + filename[:-4]
+        # Filenames are stored as "userid_trainingid_filename".
+        filename = str(current_user.id) + '_' + str(training_id) + '_' + filename[:-4]
         # Save the file under instance/files/filename.csv.
         f.save(os.path.join(app.instance_path, 'files', filename + '.csv'))
         
-        # Update the job database entry to include the new filename.
-        job.filename = filename
+        # Update the training database entry to include the new filename.
+        training.filename = filename
         # Merge and commit the entry to the database.
-        db.session.merge(job)
+        db.session.merge(training)
         db.session.commit()
 
         # Creates queue entry to process the uploaded data.
         # Calls the training function for the worker.
         running_job = q.enqueue_call(
-                func=training_function, args=(job_id,), result_ttl=5000
+                func=training_function, args=(training_id,), result_ttl=5000
                 )
         
         # Flash the user and return user to home.
@@ -181,5 +229,5 @@ def upload():
         return redirect(url_for('index'))
         
     # Render upload page.
-    return render_template('upload.html', form=form)
+    return render_template('upload_training.html', form=form)
 

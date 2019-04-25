@@ -31,8 +31,9 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     # This allows jobs to be referenced back to a user.
-    jobs = db.relationship('Job', backref='user', lazy='dynamic')
-    
+    training = db.relationship('Training', backref='user', lazy='dynamic')
+    testing = db.relationship('Testing', backref='user', lazy='dynamic')
+
     # Returns the user type.
     def __repr__(self):
         return '<User {}>'.format(self.username)
@@ -46,10 +47,10 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
 
-##  Job class initializes the Job model for the database.
+##  Training class initializes the Training model for the database.
 #   Columns initialized include; id, project, timestamp, useri_id, 
 #   and filename.
-class Job(db.Model):
+class Training(db.Model):
     # These columns are initialized with characteristics specific to their
     # function.
 
@@ -62,10 +63,35 @@ class Job(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     # Stores the filename of the submitted data.
     filename = db.Column(db.String(120))
+    # This allows the teasting to be referneced back to a training job.
+    testing = db.relationship('Testing', backref='training', lazy='dynamic')
     
     # Returns the job type.
     def __repr__(self):
-        return '<Job {}>'.format(self.project)
+        return '<Training {}>'.format(self.project)
+
+
+##  Testing class initializes the Testing model for the database.
+#   Columns initialized include; id, project, timestamp, useri_id,
+#   and filename.
+class Testing(db.Model):
+    # These columns are initialized with characteristics specific to their
+    # function.
+
+    # id is the primary key for each entry.
+    id = db.Column(db.Integer, primary_key=True)
+    # Project stores the description of the project.
+    project = db.Column(db.String(140))
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    # Enables back referencing to the User that submitted the data.
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    training_id = db.Column(db.Integer, db.ForeignKey('training.id'))
+    # Stores the filename of the submitted data.
+    filename = db.Column(db.String(120))
+
+    # Returns the job type.
+    def __repr__(self):
+        return '<Testing {}>'.format(self.project)
 
 
 ##  This user loader enables users to remain logged in to the site.
