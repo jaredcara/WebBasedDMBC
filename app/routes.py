@@ -5,17 +5,18 @@
 ##  user/<username>, and user/<username>/<project_id>.
 ##
 
-#   The main flask functions imported.
-from flask import render_template, flash, redirect, url_for, request
-#   The main flask_login funcitons imported to enable login/logout.
-from flask_login import current_user, login_user, logout_user, login_required
 
-#   Tools imported for parsing urls and importing filenames
+##  Import packages.
+#   The primary flask functions imported.
+from flask import render_template, flash, redirect, url_for, request, send_file
+#   The primary flask_login funcitons imported to enable login/logout.
+from flask_login import current_user, login_user, logout_user, login_required
+#   Tools imported for parsing urls and importing filenames.
 from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
-
+#   Import os.
 import os
-
+##  Import app functions.
 #   Imports main app, database, and queue.
 from app import app, db, q
 #   Imports database models
@@ -59,12 +60,14 @@ def login():
         
         # Log in the user.
         login_user(user, remember=form.remember_me.data)
+        
         # Redirect the user.
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('index')
 
         return redirect(next_page)
+    
     # Render login page
     return render_template('login.html', title='Sign In', form=form)
 
@@ -88,17 +91,21 @@ def register():
     
     # Loads the registeration form.
     form = RegistrationForm()
+    
     # If the form is valid, submit the form.
     if form.validate_on_submit():
         # Create new database entry for a user.
         user = User(username=form.username.data, email=form.email.data)
         user.set_password(form.password.data)
+        
         # Add and commit the user to the database
         db.session.add(user)
         db.session.commit()
+
         # Flash the user and redirect to home.
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
+    
     # Render registration page.
     return render_template('register.html', title='Register', form=form)
 
@@ -106,9 +113,13 @@ def register():
 ##  User/<username> route.
 #   This is a "profile" page, users can see their current projects.
 #   Requires user to be logged in.
-@app.route('/user/<username>')
+@app.route('/user/<username>', methods = ['GET', 'POST'])
 @login_required
 def user(username):
+    if current_user.id != User.query.filter_by(username=username).first().id:
+        flash('You do not have access to this page!')
+        return redirect(url_for('index'))
+
     # Query the database for user.
     user = User.query.filter_by(username=username).first()
     # Query the database for the users training projects.
@@ -117,74 +128,8 @@ def user(username):
     # Adds all trainings to list for user to see their projects.
     trainings = []
     for each in all_trainings:
-        trainings.append({'id': each.id, 'project': each.project})
+        trainings.append({'id': each.id, 'project': each.project, 'ready': each.ready, 'filename': each.filename})
     
-    # Render user/<username>.
-    return render_template('user.html', user=user, trainings=trainings)
-
-
-##  User/<username>/<project_id> route.
-#   Currently a WIP.
-@app.route('/user/<username>/<project_id>', methods = ['GET', 'POST'])
-@login_required
-def current_project(username, project_id):
-    # Query the database for tested sets.
-    training = Training.query.filter_by(id=project_id).first()
-    
-    all_testings = training.testing.all()
-
-    print(project_id)
-
-    testings = []
-    for each in all_testings:
-        testings.append({'id': each.id, 'project': each.project})
-    
-    # Load the upload form.
-    form = UploadTesting()
-    
-
-    # If the form is valid, submit the form.
-    if form.validate_on_submit():
-        # Load data into f variable and description into d variable.
-        f = form.upload.data
-        d = form.description.data
-        
-        # Creates new testing entry for database.
-
-        testing = Testing(project=d, user=current_user, training=training)
-        db.session.add(testing)
-        db.session.commit()
-
-        testing_id = Testing.query.filter_by(user=current_user, project=d).first().id
-
-        filename = secure_filename(f.filename)
-
-        filename = str(current_user.id) + '_' + str(project_id) + '_' + str(testing_id) + '_' + filename[:-4]
-
-        f.save(os.path.join(app.instance_path, 'files', filename + '.csv'))
-
-        testing.filename = filename
-
-        db.session.merge(testing)
-        db.session.commit()
-
-        running_job = q.enqueue_call(
-                func=testing_function, args=(testing_id,), result_ttl=5000
-                )
-
-        
-        flash('File upload successful')
-        return redirect(url_for('index'))
-
-    return render_template('current_project.html', form=form, training=training.project, testings=testings)
-
-
-##  Upload route.
-#   Users upload data for a new project.
-#   Requires users to be logged in.
-@app.route('/upload', methods = ['GET', 'POST'])
-@login_required
-def uploadtraining():
     # Load the upload form.
     form = UploadTraining()
 
@@ -195,7 +140,7 @@ def uploadtraining():
         d = form.description.data
 
         # Creates new training entry for database.
-        training = Training(project=d, user=current_user)
+        training = Training(project=d, user=current_user, ready=False)
         # Add and submit entry to database.
         db.session.add(training)
         db.session.commit()
@@ -204,14 +149,14 @@ def uploadtraining():
         # This is to enable consistancy across input files, training is added
         # to the database first, then the id is obtained.
         training_id = Training.query.filter_by(user=current_user, project=d).first().id
-        
+
         # Retrieves the filename for the input file.
         filename = secure_filename(f.filename)
         # Filenames are stored as "userid_trainingid_filename".
         filename = str(current_user.id) + '_' + str(training_id) + '_' + filename[:-4]
         # Save the file under instance/files/filename.csv.
         f.save(os.path.join(app.instance_path, 'files', filename + '.csv'))
-        
+
         # Update the training database entry to include the new filename.
         training.filename = filename
         # Merge and commit the entry to the database.
@@ -223,11 +168,107 @@ def uploadtraining():
         running_job = q.enqueue_call(
                 func=training_function, args=(training_id,), result_ttl=5000
                 )
-        
+
         # Flash the user and return user to home.
         flash('File upload successful')
+        return redirect(url_for('user', username=username))
+
+    # Render user/<username>.
+    return render_template('user.html', user=user, trainings=trainings, form=form)
+
+
+##  User/<username>/<project_id> route.
+#   This page is directed from user/<username>, holds all test data for a 
+#   training project. Users can download the results page.
+@app.route('/user/<username>/<project_id>', methods = ['GET', 'POST'])
+@login_required
+def current_project(username, project_id):
+    if current_user.id != User.query.filter_by(username=username).first().id:
+        flash('You do not have access to this page!')
         return redirect(url_for('index'))
+
+    # Query the database for tested sets.
+    training = Training.query.filter_by(id=project_id).first()
+    # Query the database for the users testing sets.
+    all_testings = training.testing.all()
+    
+    # Adds all trainings to list for users to see each testing project.
+    testings = []
+    for each in all_testings:
+        testings.append({'id': each.id, 'project': each.project, 'ready': each.ready, 'filename': each.filename})
+    
+    # Load the upload form.
+    form = UploadTesting()
+
+    # If the form is valid, submit the form.
+    if form.validate_on_submit():
+        # Load data into f variable and description into d variable.
+        f = form.upload.data
+        d = form.description.data
         
-    # Render upload page.
-    return render_template('upload_training.html', form=form)
+        # Creates new testing entry for database.
+        testing = Testing(project=d, user=current_user, training=training, ready=False)
+        # Add and submit entry to database.
+        db.session.add(testing)
+        db.session.commit()
+        
+        # Query the database for this testing job.
+        # This is to enable consistancy across input files, testing is added
+        # to the database, then the id is obtained.
+        testing_id = Testing.query.filter_by(user=current_user, project=d).first().id
+        # Retrieves the filename for the input file.
+        filename = secure_filename(f.filename)
+        # Filenames are stored as "userid_trainingid_testingid_filename".
+        filename = str(current_user.id) + '_' + str(project_id) + '_' + str(testing_id) + '_' + filename[:-4]
+        # Save the file under instance/files/filename.csv.
+        f.save(os.path.join(app.instance_path, 'files', filename + '.csv'))
+        
+        # Update the training database entry to include the new filename.
+        testing.filename = filename
+        # Merge and commit the entry to the database.
+        db.session.merge(testing)
+        db.session.commit()
+        
+        # Creates queue entry to process the uploaded data.
+        # Calls the testing function for the worker.
+        running_job = q.enqueue_call(
+                func=testing_function, args=(testing_id,), result_ttl=5000
+                )
+
+        # Flash the user and return to user/<username>/<currentproject>
+        flash('File upload successful')
+        return redirect(url_for('current_project', username=username, project_id=project_id))
+
+    # render user/<username>/<currentproject>
+    return render_template('current_project.html', form=form, training=training.project, testings=testings)
+
+
+##  Download/<filename> route.
+#   This is the download route for users to download their data.
+@app.route('/download/<filename>')
+@login_required
+def serve_file(filename):
+    if Training.query.filter_by(filename=filename[:-4]).first() is not None:
+        fetching_file = Training.query.filter_by(filename=filename[:-4]).first()
+    elif Training.query.filter_by(filename_done=filename[:-4]).first() is not None:
+        fetching_file = Training.query.filter_by(filename_done=filename[:-4]).first()
+    elif Testing.query.filter_by(filename=filename[:-4]).first() is not None:
+        fetching_file = Testing.query.filter_by(filename=filename[:-4]).first()
+    elif Testing.query.filter_by(filename_done=filename[:-4]).first() is not None:
+        fetching_file = Testing.query.filter_by(filename_done=filename[:-4]).first()
+    else:
+        flash('This file does not exist')
+        return redirect(url_for('index'))
+    
+    if current_user.id != fetching_file.user_id:
+        flash('You do not have access to this file!')
+        return redirect(url_for('index'))
+
+    try:
+        # Filelocation foor <filename>.
+        location = os.path.join(app.instance_path, 'files', filename)
+        # Serve the file to the user.
+        return send_file(location)
+    except Exception as e:
+        return str(e)
 

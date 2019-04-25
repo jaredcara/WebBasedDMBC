@@ -5,14 +5,16 @@
 ##
 
 
-#   flask_wtf and wtforms are the packages used to manage forms.
+##  Import packages.
+#   Flask_wtf and wtforms are the packages used to manage forms.
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, PasswordField, BooleanField, SubmitField #,FieldList
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo
+#   Flask_login to manager logged in users.
 from flask_login import current_user
-
-#   imports User model to validate users.
+##  Import database models.
+#   Imports User, Training, and Testing models.
 from app.models import User, Training, Testing
 
 

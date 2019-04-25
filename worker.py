@@ -6,11 +6,11 @@
 
 #   Import os.
 import os
-
 #   Import redis for asynchronous tasks.
 import redis
 #   Import modules from rq.
 from rq import Worker, Queue, Connection
+
 
 #   Enables worker to always listen.
 listen = ['default']
@@ -28,3 +28,4 @@ if __name__ == '__main__':
         worker = Worker(list(map(Queue, listen)))
         # Starts the worker.
         worker.work()
+

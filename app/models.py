@@ -1,17 +1,18 @@
 ##  models.py
 ##
 ##  This initializes all models for the database.
-##  Includes User, and Job.
+##  Includes User, Testing, and Training.
 ##
 
-#   datetime is used to time stamp Job entries.
+##  Import packages.
+#   Datetime is used to time stamp Job entries.
 from datetime import datetime
-#   werkzeug.security is used to secure passwords.
+#   Werkzeug.security is used to secure passwords.
 from werkzeug.security import generate_password_hash, check_password_hash
-#   flask_login is used to allow users to remain logged into the site.
+#   Flask_login is used to allow users to remain logged into the site.
 from flask_login import UserMixin
-
-#   imports the database.
+##  Import app functions.
+#   Imports the database.
 from app import db
 from app import login
 
@@ -23,7 +24,7 @@ class User(UserMixin, db.Model):
     # These columns are initialized with characteristics specific to their 
     # function.
     
-    # id is the primary key for each database entry.
+    # Id is the primary key for each database entry.
     id = db.Column(db.Integer, primary_key=True)
     # Username is a unique entry.
     username = db.Column(db.String(64), index=True, unique=True)
@@ -54,18 +55,21 @@ class Training(db.Model):
     # These columns are initialized with characteristics specific to their
     # function.
 
-    # id is the primary key for each entry.
+    # Id is the primary key for each entry.
     id = db.Column(db.Integer, primary_key=True)
     # Project stores the description of the project.
     project = db.Column(db.String(140))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    # Ready stores status of progress.
+    ready = db.Column(db.Boolean)
     # Enables back referencing to the User that submitted the data.
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     # Stores the filename of the submitted data.
     filename = db.Column(db.String(120))
+    filename_done = db.Column(db.String(120))
     # This allows the teasting to be referneced back to a training job.
     testing = db.relationship('Testing', backref='training', lazy='dynamic')
-    
+        
     # Returns the job type.
     def __repr__(self):
         return '<Training {}>'.format(self.project)
@@ -78,16 +82,19 @@ class Testing(db.Model):
     # These columns are initialized with characteristics specific to their
     # function.
 
-    # id is the primary key for each entry.
+    # Id is the primary key for each entry.
     id = db.Column(db.Integer, primary_key=True)
     # Project stores the description of the project.
     project = db.Column(db.String(140))
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    # Ready stores status of progress.
+    ready = db.Column(db.Boolean)
     # Enables back referencing to the User that submitted the data.
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     training_id = db.Column(db.Integer, db.ForeignKey('training.id'))
     # Stores the filename of the submitted data.
     filename = db.Column(db.String(120))
+    filename_done = db.Column(db.String(120))
 
     # Returns the job type.
     def __repr__(self):
