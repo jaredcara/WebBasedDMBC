@@ -1,7 +1,37 @@
 {% extends "base.html" %}
 
-{% block content %}
-	<body>
-		This is the project
-	</body<
+{% block app_content %}
+	<h2>Current Project: {{ training }}</h2>
+	<hr>
+	{% if testings %}
+	<h3>Your Test Data</h3>
+	<table class="table table-hover">
+		<thead>
+			<tr>
+				<th></th>
+				<th>Description</th>
+				<th>Completed, click to download</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for testing in testings %}
+			<tr>
+				<td>{{ testing.id }}</td>
+				<td>{{ testing.project }}</td>
+				{% if testing.ready %}
+				<td><a href="{{ url_for('serve_file', filename=testing.filename + '_done.csv') }}">Download</a></td>
+				{% else %}
+				<td>Please come back later</td>
+				{% endif %}
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	{% else %}
+	<h3>You have no current test data uploaded.</h3>
+	{% endif %}
+	<hr>
+        <body>Upload new data to test for this project</body>
+	{% include '_upload.html' %}
 {% endblock %}
+

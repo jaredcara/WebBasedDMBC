@@ -1,11 +1,42 @@
 {% extends "base.html" %}
 
-{% block content %}
-	<h1>User: {{ user.username }}</h1>
+{% block app_content %}
+	<h2>User: {{ user.username }}</h2>
 	<hr>
+	{% if trainings %}
 	<h3>All current projects</h3>
-	{% for job in jobs %}
-		{% include '_job.html' %}
-	{% endfor %}
-	<a href="{{ url_for('upload') }}">Start a new project</a>
+	<table class="table table-hover">
+		<thead>
+		        <tr>
+		                <th></th>
+		                <th>Description</th>
+		                <th>Ready for testing</th>
+				<th>Download raw data</th>
+				<th>Download trained model</th>
+		        </tr>
+		</thead>
+		<tbody>
+			{% for training in trainings %}
+			<tr>
+				<td>{{ training.id }}</td>
+				<td>{{ training.project }}</td>
+				{% if training.ready %}				
+				<td><a href="{{ url_for('current_project', username=current_user.username, project_id=training.id) }}">Start testing</a></td>
+				<td><a href="{{ url_for('serve_file', filename=training.filename + '.csv') }}">Download</a></td>
+				<td><a href="{{ url_for('serve_file', filename=training.filename + '_trained.csv') }}">Download</a></td>
+				{% else %}
+				<td>Please come back later</td>
+				<td></td>
+				<td></td>
+				{% endif %}
+		        </tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	{% else %}
+	<h3>You have no current projects, start a new project here.</h3>
+	{% endif %}
+	<hr>
+	<h3>Start a new training project</h3>
+	{% include '_upload.html' %}
 {% endblock %}
