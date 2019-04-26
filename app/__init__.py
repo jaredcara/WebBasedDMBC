@@ -11,6 +11,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_bootstrap import Bootstrap
+from flask_mail import Mail, Message
+from flask_bcrypt import Bcrypt
 from config import Config
 from rq import Queue
 from worker import conn
@@ -26,6 +28,10 @@ bootstrap = Bootstrap(app)
 
 #   Enable database migration.
 migrate = Migrate(app, db)
+
+bcrypt = Bcrypt(app)
+
+mail = Mail(app)
 
 #   Initialize queue.
 q = Queue(connection=conn)

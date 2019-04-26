@@ -9,12 +9,12 @@
 from datetime import datetime
 #   Werkzeug.security is used to secure passwords.
 from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 #   Flask_login is used to allow users to remain logged into the site.
 from flask_login import UserMixin
 ##  Import app functions.
 #   Imports the database.
-from app import db
-from app import login
+from app import app, db, login
 
 
 ##  User class initializes the User model for the database
@@ -46,6 +46,19 @@ class User(UserMixin, db.Model):
     # Used when logging in, to check password entry.
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def get_reset_token(self, expires_sec=1800):
+        s = Serializer(app.config['SECRET_KEY'], expires_sec)
+        return s.dumps({'user_id': self.id}).decode('utf-8')
+
+    @staticmethod
+    def verify_reset_token(token):
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token)['user_id']
+        except:
+            return None
+        return User.query.get(user_id)
 
 
 ##  Training class initializes the Training model for the database.
