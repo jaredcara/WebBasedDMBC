@@ -1,6 +1,6 @@
 import rpy2.robjects as robjects
 
-output = open("DMBC_Prediction.log", "w")
+output = open("DMBC_Prediction.csv", "w")
 
 x = robjects.r('''
 library(DMBC)
@@ -13,9 +13,11 @@ auc_out <- Cal_AUC(loocv(training))
 dmbc_predict(data=training,testSet=test,auc_out=auc_out)
 ''')
 
+
+
 print("DMBC Prediction has finished running!")
 
-output.write(x)
+output.write(str(x))
 
 output.close()
 
