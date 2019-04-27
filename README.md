@@ -14,3 +14,7 @@ sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic
 sudo apt update
 
 sudo apt install r-base r-base-dev
+
+sudo flask db init
+
+sudo flask db migrate -m "update db"
