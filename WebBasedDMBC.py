@@ -1,4 +1,4 @@
-##  run_app.py
+##  WebBasedDMBC.py
 ## 
 ##  This function creates a shell context that adds the database instance 
 ##  and its models to the shell session.
@@ -9,7 +9,6 @@
 from app import app, db
 #   Imports database models.
 from app.models import User, Testing, Training
-
 
 #   Processor for application.
 @app.shell_context_processor

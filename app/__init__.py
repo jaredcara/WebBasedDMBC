@@ -22,23 +22,40 @@ from worker import conn
 app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
+#   Enable database migration.
+migrate = Migrate(app, db)
+
+#   Initialize login manager, allows users to remain logged in.
+login = LoginManager(app)
+login.login_view = 'login'
 
 #   Initalize bootstrap
 bootstrap = Bootstrap(app)
-
-#   Enable database migration.
-migrate = Migrate(app, db)
 
 bcrypt = Bcrypt(app)
 
 mail = Mail(app)
 
-#   Initialize queue.
 q = Queue(connection=conn)
 
-#   Initialize login manager, allows users to remain logged in.
-login = LoginManager(app)
-login.login_view = 'login'
+def create_app(config_class=Config):
+    #   Initalize flask and the SQLAchemy datbase.
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+    
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login.init_app(app)
+    bcrypt.init_app(app)
+    mail.init_app(app)
+    bootstrap.init_app(app)
+    app.redis = Redis.from_url(app.config['REDIS_URL'])
+    app.task_queue = Queue('Tasks', connection=conn)
+    
+
+
+    return app
+
 
 #   Import models last for the database.
 from app import routes, models, errors

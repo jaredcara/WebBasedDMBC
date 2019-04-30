@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-	<h1>An unexpected error has occurred</h1>
+	<h2>An unexpected error has occurred</h2>
 	<p>Please contact an admin. Sorry for the inconvenience!</p>
 	<p><a href="{{ url_for('index') }}">Back</a></p>
+	<p>Please visit the <a href="https://github.com/qunfengdong/DMBC" target="_blank">DMBC GitHub</a> and our implementation, <a href="https://github.com/jaredcara/WebBasedDMBC" target="_blank">WebBasedDMBC GitHub</a>.</p>
 {% endblock %}

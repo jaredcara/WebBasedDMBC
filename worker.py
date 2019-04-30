@@ -11,7 +11,6 @@ import redis
 #   Import modules from rq.
 from rq import Worker, Queue, Connection
 
-
 #   Enables worker to always listen.
 listen = ['default']
 
