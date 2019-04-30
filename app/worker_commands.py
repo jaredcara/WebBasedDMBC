@@ -7,18 +7,36 @@
 
 #   Imports rpy2 to call the R scripts.
 import rpy2.robjects as robjects
+from flask_mail import Message
 #   Imports app, database, and queue.
-from app import app, db, q
+from app import app, db, q, mail
 #   Imports models from database.
 from app.models import User, Training, Testing
 
+app.app_context().push()
+
+def send_finished_email(training_id, url):
+    user = Training.query.get(training_id).user
+    jobname = Training.query.get(training_id).project
+    msg = Message('Your training job has completed!',
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[user.email])
+
+    msg.body = f'''Hello { user.username }, 
+Thank you for using DMBC. Your training job, { jobname }, has completed. Please login to your account to download your data.
+
+{ url }
+
+'''
+
+    mail.send(msg)
 
 ##  Training function.
 #   This function calls the R scripts to load data and process the DMBC commands.
 #   Accepts job_id.
-def training_function(training_id):
+def training_function(training_id, url):
     errors = []
-    
+
     try:
         # rstring is the function that will be called with rpy2.
         # Loads the DMBC library.
@@ -51,7 +69,8 @@ def training_function(training_id):
         # Merge and commit training change.
         db.session.merge(training)
         db.session.commit()
-
+        
+        send_finished_email(training_id, url)
     except:
         errors.append("Unable to train.")
         return {"errors": errors}
@@ -87,11 +106,6 @@ def testing_function(testing_id):
         trained = location + str(current_testing.training.filename_done)
         testing = location + str(current_testing.filename)
         tested = location + str(current_testing.filename) + '_done'
-        
-        print('training: ' + training)
-        print('trained: ' + trained)
-        print('testing: ' + testing)
-        print('tested: ' + tested)
 
         # Loads rpy2 object from rstring.
         rfunc = robjects.r(rstring)
