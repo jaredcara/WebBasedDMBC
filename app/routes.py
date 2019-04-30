@@ -19,7 +19,7 @@ from werkzeug.utils import secure_filename
 import os
 ##  Import app functions.
 #   Imports main app, database, and queue.
-from app import app, db, mail, bcrypt, q
+from app import app, db, q, mail, bcrypt
 #   Imports database models
 from app.models import User, Training, Testing
 #   Imports entry forms.
@@ -167,7 +167,7 @@ def user(username):
         # Creates queue entry to process the uploaded data.
         # Calls the training function for the worker.
         running_job = q.enqueue_call(
-                func=training_function, args=(training_id, url_for('user', username=user.username, _external=True)), result_ttl=5000
+                func=training_function, args=(training_id,), result_ttl=5000
                 )
 
         # Flash the user and return user to home.
@@ -266,70 +266,12 @@ def serve_file(filename):
         return redirect(url_for('index'))
 
     try:
-        # Filelocation for <filename>.
+        # Filelocation foor <filename>.
         location = os.path.join(app.instance_path, 'files', filename)
         # Serve the file to the user.
         return send_file(location)
     except Exception as e:
         return str(e)
-
-
-##  Download/<filename> route.
-#   This is the download route for users to download the sample data.
-@app.route('/download/<filename>')
-def getfile(filename):
-    if filename == 1:
-        try:
-            location = os.path.join(app.instance_path, 'Sample', 'training.csv')
-            return send_file(location)
-        except Exception as e:
-            return str(e)
-    elif filename == 2:
-        try:
-            location = os.path.join(app.instance_path, 'Sample', 'test.csv')
-            return send_file(location)
-        except Exception as e:
-            return str(e)
-
-
-##  Delete/<filename> route.
-#   This is the delete route for users to delete their data.
-@app.route('/delete/<filename>')
-@login_required
-def delete_file(filename):
-    file_type = 'none'
-    if Training.query.filter_by(filename=filename[:-4]).first() is not None:
-        fetching_file = Training.query.filter_by(filename=filename[:-4]).first()
-        file_type = 'train'
-    elif Testing.query.filter_by(filename=filename[:-4]).first() is not None:
-        fetching_file = Testing.query.filter_by(filename=filename[:-4]).first()
-        file_type = 'test'
-    else:
-        flash('This file does not exist')
-        return redirect(url_for('index'))
-
-    if current_user.id != fetching_file.user_id:
-        flash('You do not have access to this file!')
-        return redirect(url_for('index'))
-    
-    if file_type == 'train':
-        for each in fetching_file.testing.all():
-            os.remove(os.path.join(app.instance_path, 'files', each.filename + '.csv'))
-            os.remove(os.path.join(app.instance_path, 'files', each.filename + '_done.csv'))
-            db.session.delete(each)
-        os.remove(os.path.join(app.instance_path, 'files', filename))
-        os.remove(os.path.join(app.instance_path, 'files', filename[:-4] + '_trained.csv'))
-        db.session.delete(fetching_file)
-        db.session.commit()
-        flash('File delete successful')
-        return redirect(url_for('user', username=current_user.username))
-    elif file_type == 'test':
-        os.remove(os.path.join(app.instance_path, 'files', filename))
-        os.remove(os.path.join(app.instance_path, 'files', filename[:-4] + '_done.csv'))
-        db.session.delete(fetching_file)
-        db.session.commit()
-        flash('File delete successful')
-        return redirect(url_for('user', username=current_user.username))
 
 
 def send_reset_email(user):
@@ -342,6 +284,7 @@ def send_reset_email(user):
 
     If you did not make this request then ignore this email and no changes will be made.
     '''
+
     mail.send(msg)
 
 
