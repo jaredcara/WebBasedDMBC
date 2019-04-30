@@ -5,7 +5,8 @@
 
 
 ##  Import Packages.
-#   Imports Flask, Bootstrap, SQLAlchemy, Migrate, LoginManager, Config, Queue, and conn.
+#   Imports Flask, Bootstrap, SQLAlchemy, Migrate, LoginManager, Bootstrap, 
+#   Mail, Message, Bcrypt, Config, Queue, and conn.
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -29,8 +30,10 @@ bootstrap = Bootstrap(app)
 #   Enable database migration.
 migrate = Migrate(app, db)
 
+#   Initialize bcrypt for key gen
 bcrypt = Bcrypt(app)
 
+#   Initialize mail
 mail = Mail(app)
 
 #   Initialize queue.

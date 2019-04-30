@@ -59,18 +59,21 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('Please use a different email address.')
 
 
-##  Request reset
+##  RequestResetForm class enables requesting a password reset.
+#   Email and submit fields.
 class RequestResetForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Request Password Reset')
 
+    # Validate_email def checks that db has an entry for email entry.
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is None:
             raise ValidationError('There is no account with that email. You must register first.')
 
 
-##  ResetPass
+##  ResetPasswordForm class enables changing a password.
+#   Password and submit fields.
 class ResetPasswordForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])

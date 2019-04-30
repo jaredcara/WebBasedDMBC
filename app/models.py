@@ -7,7 +7,7 @@
 ##  Import packages.
 #   Datetime is used to time stamp Job entries.
 from datetime import datetime
-#   Werkzeug.security is used to secure passwords.
+#   Werkzeug.security, and itsdangerous are used to secure passwords and reset tokens.
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 #   Flask_login is used to allow users to remain logged into the site.

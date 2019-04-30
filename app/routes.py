@@ -11,6 +11,7 @@
 from flask import render_template, flash, redirect, url_for, request, send_file
 #   The primary flask_login funcitons imported to enable login/logout.
 from flask_login import current_user, login_user, logout_user, login_required
+#   Imports Message for email sending.
 from flask_mail import Message
 #   Tools imported for parsing urls and importing filenames.
 from werkzeug.urls import url_parse
@@ -18,8 +19,8 @@ from werkzeug.utils import secure_filename
 #   Import os.
 import os
 ##  Import app functions.
-#   Imports main app, database, and queue.
-from app import app, db, q, mail, bcrypt
+#   Imports main app, database, queue, and mail.
+from app import app, db, q, mail
 #   Imports database models
 from app.models import User, Training, Testing
 #   Imports entry forms.
@@ -117,6 +118,7 @@ def register():
 @app.route('/user/<username>', methods = ['GET', 'POST'])
 @login_required
 def user(username):
+    # Prevents users from accessing other's page.
     if current_user.id != User.query.filter_by(username=username).first().id:
         flash('You do not have access to this page!')
         return redirect(url_for('index'))
@@ -184,6 +186,7 @@ def user(username):
 @app.route('/user/<username>/<project_id>', methods = ['GET', 'POST'])
 @login_required
 def current_project(username, project_id):
+    # Prevents users from accessing other's page.
     if current_user.id != User.query.filter_by(username=username).first().id:
         flash('You do not have access to this page!')
         return redirect(url_for('index'))
@@ -249,6 +252,8 @@ def current_project(username, project_id):
 @app.route('/download/<filename>')
 @login_required
 def serve_file(filename):
+    # This checks that file type is correct and prevents downloading of non-existant
+    # files.
     if Training.query.filter_by(filename=filename[:-4]).first() is not None:
         fetching_file = Training.query.filter_by(filename=filename[:-4]).first()
     elif Training.query.filter_by(filename_done=filename[:-4]).first() is not None:
@@ -261,12 +266,13 @@ def serve_file(filename):
         flash('This file does not exist')
         return redirect(url_for('index'))
     
+    # This prevents users from downloading other's files.
     if current_user.id != fetching_file.user_id:
         flash('You do not have access to this file!')
         return redirect(url_for('index'))
 
     try:
-        # Filelocation foor <filename>.
+        # Filelocation for <filename>.
         location = os.path.join(app.instance_path, 'files', filename)
         # Serve the file to the user.
         return send_file(location)
@@ -278,6 +284,7 @@ def serve_file(filename):
 #   This is the download route for users to download the sample data.
 @app.route('/sample/<filename>')
 def getfile(filename):
+    # This prevents users from downloading non-existant files and only training/testing.
     if filename == 'training.csv':
         try:
             location = os.path.join(app.instance_path, 'Sample', 'training.csv')
@@ -297,6 +304,7 @@ def getfile(filename):
 @app.route('/delete/<filename>')
 @login_required
 def delete_file(filename):
+    # Checks file type user is deleting.
     file_type = 'none'
     if Training.query.filter_by(filename=filename[:-4]).first() is not None:
         fetching_file = Training.query.filter_by(filename=filename[:-4]).first()
@@ -307,79 +315,110 @@ def delete_file(filename):
     else:
         flash('This file does not exist')
         return redirect(url_for('index'))
-
+    
+    # Prevents users from deleting other's files.
     if current_user.id != fetching_file.user_id:
         flash('You do not have access to this file!')
         return redirect(url_for('index'))
-
+    
+    # Deletes correct file.
     if file_type == 'train':
+        # Deletes entire training project including testing.
+        # Clears database entry for training, testing.
         for each in fetching_file.testing.all():
             os.remove(os.path.join(app.instance_path, 'files', each.filename + '.csv'))
             os.remove(os.path.join(app.instance_path, 'files', each.filename + '_done.csv'))
+            
             db.session.delete(each)
         os.remove(os.path.join(app.instance_path, 'files', filename))
         os.remove(os.path.join(app.instance_path, 'files', filename[:-4] + '_trained.csv'))
+        
         db.session.delete(fetching_file)
         db.session.commit()
+
         flash('File delete successful')
         return redirect(url_for('user', username=current_user.username))
+    
+    # Deletes testing files and clears database entry for testing.
     elif file_type == 'test':
         os.remove(os.path.join(app.instance_path, 'files', filename))
         os.remove(os.path.join(app.instance_path, 'files', filename[:-4] + '_done.csv'))
+        
         db.session.delete(fetching_file)
         db.session.commit()
+        
         flash('File delete successful')
         return redirect(url_for('user', username=current_user.username))
 
 
+##  Send_reset_email function sends users an email to reset password.
+#   Generates token and message.
 def send_reset_email(user):
+    # Get token for user.
     token = user.get_reset_token()
+    # Initialize message.
     msg = Message('Password Reset Request',
             sender=app.config['MAIL_USERNAME'],
             recipients=[user.email])
-    msg.body = f'''To reset your password, visit the following link:
-    {url_for('reset_token', token=token, _external=True)}
+    msg.body = f'''Hello { user.username },
+To reset your password, visit the following link:
+{url_for('reset_token', token=token, _external=True)}
 
-    If you did not make this request then ignore this email and no changes will be made.
-    '''
-
+If you did not make this request then ignore this email and no changes will be made.
+'''
+    
+    # Send email.
     mail.send(msg)
 
 
+##  Reset_request route.
+#   Sends user password reset email.
 @app.route('/reset_request', methods=['GET', 'POST'])
 def reset_request():
+    # Prevents reset if user is logged in.
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-
+    
+    # Initialize form.
     form = RequestResetForm()
 
     if form.validate_on_submit():
+        # Query database.
         user = User.query.filter_by(email=form.email.data).first()
+        # Send email.
         send_reset_email(user)
-        flash('An email has been sent with instructions to reset your password.', 'info')
 
+        flash('An email has been sent with instructions to reset your password.', 'info')
         return redirect(url_for('login'))
 
     return render_template('reset_request.html', title='Reset Password', form=form)
 
-
+##  Reset_token route.
+#   Users can reset password using the email.
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_token(token):
+    # Prevents reset if user is logged in.
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
+    # Verify reset token.
     user = User.verify_reset_token(token)
+    # Error message.
     if user is None:
         flash('That is an invalid or expired token', 'warning')
         return redirect(url_for('reset_request'))
-
+    
+    # Initialize form.
     form = ResetPasswordForm()
-
+    
     if form.validate_on_submit():
+        # Set new password.
         user.set_password(form.password.data)
         
+        # Add new password to database.
         db.session.merge(user)
         db.session.commit()
+
         flash('Your password has been updated! Please login.', 'success')
         return redirect(url_for('login'))
 
