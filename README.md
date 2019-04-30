@@ -23,5 +23,6 @@ INSTALLATION:
 7. sudo flask db migrate -m "update db"
 8. flask run
 *Open new terminal instance to WebBasedDMBC/*
-9. python worker.py
-10. Open application in your web browser!
+9. source venv/bin/activate
+10. python worker.py
+11. Open application in your web browser!
