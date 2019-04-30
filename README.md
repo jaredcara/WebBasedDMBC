@@ -1,20 +1,27 @@
 # WebBasedDMBC
 Repo for COMP 383/483 project
 
-python3 -m venv venv
+DMBC is a Dirichlet-Multinomial Bayes Classifier for disease diagnosis with microbial compositions. This GitHub repo serves as our devlopment of a tool to run the DMBC R package for users online. Some functionality includes, user authentication, file upload and management, data processing, email support, and result downloading.
 
-source venv/bin/activate
 
-pip install -r requirements.txt
+REQUIREMENTS:
 
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+Devlopment uisng Python3.6.7, although other versions of Python3 may work.
 
-sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/'
+Current installation of R-base and R-dev.
 
-sudo apt update
+Python venv for ease of package management. You can get by this with pip-installing all packages in the requirements.txt file.
 
-sudo apt install r-base r-base-dev
 
-sudo flask db init
-
-sudo flask db migrate -m "update db"
+INSTALLATION:
+1. git clone https://github.com/jaredcara/WebBasedDMBC.git
+2. cd WebBasedDMBC
+3. python3 -m venv venv
+4. source venv/bin/activate
+5. pip install -r requirements.txt
+6. sudo flask db init
+7. sudo flask db migrate -m "update db"
+8. flask run
+*Open new terminal instance to WebBasedDMBC/*
+9. python worker.py
+10. Open application in your web browser!
